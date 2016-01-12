@@ -2,7 +2,7 @@
 <?php
 
 require 'vendor/autoload.php';
-
+error_reporting(E_ALL);
 
 function d($item)
 {
@@ -16,7 +16,7 @@ class Unused
 
 class B
 {
-    use \FW\Traits\DI;
+    use \FW\DI\DI;
 
     public $c = C::class;
 
@@ -28,7 +28,7 @@ class B
 
 class C
 {
-    use \FW\Traits\DI;
+    use \FW\DI\DI;
 }
 
 class D
@@ -43,7 +43,7 @@ class SubD extends D
 
 class Test
 {
-    use \FW\Traits\DI;
+    use \FW\DI\DI;
 
     protected $c = C::class;
     protected $b = B::class;
@@ -63,18 +63,20 @@ class Test
 }
 
 $item = B::build();
-//d($item->c);
-//die();
 $testC = C::build();
 
 d($testC);
 
-$test = Test::build()->with(B::build()->with(C::build()))->with(C::build())->with(new D(), 'a')->with(new Unused());
+$test = Test::build()
+    ->with(
+        B::build()
+            ->with(C::build()))
+    ->with(C::build())
+    ->with(new D(), 'd')
+    ->with(new Unused());
 
 try {
     $test->meth();
 } catch (\FW\Decorator\Exception $e) {
     d($e->getMessage());
 }
-
-//d($test);

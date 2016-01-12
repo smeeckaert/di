@@ -1,9 +1,10 @@
 <?php
 
-namespace FW\Traits;
+namespace FW\DI;
 
 use FW\Decorator\Builder;
 use FW\Decorator\Exception;
+use FW\DI\DI;
 
 class Decorator
 {
@@ -140,6 +141,21 @@ class Decorator
     }
 
     public function __get($a)
+    {
+        $this->decoratorError();
+    }
+
+    public function __set($a, $b)
+    {
+        $this->decoratorError();
+    }
+
+    public function __isset($a)
+    {
+        $this->decoratorError();
+    }
+
+    public function __unset($a)
     {
         $this->decoratorError();
     }

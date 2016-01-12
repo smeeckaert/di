@@ -1,6 +1,6 @@
 <?php
 
-namespace FW\Traits;
+namespace FW\DI;
 
 use FW\DI\Exception;
 
@@ -94,7 +94,11 @@ trait DI
     {
         if (!empty($this->propertyTypes[$name]) && $value !== null) {
             if (!is_a($value, $this->propertyTypes[$name])) {
-                throw new Exception("You can't put an instance of ".get_class($value)." in the parameter $name of type ".$this->propertyTypes[$name]);
+                throw new Exception(
+                    sprintf("You can't put an instance of %s in the parameter $%s of type %s",
+                        get_class($value), $name, $this->propertyTypes[$name]
+                    )
+                );
             }
         }
         $this->$name = $value;

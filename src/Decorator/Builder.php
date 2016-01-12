@@ -2,8 +2,13 @@
 
 namespace FW\Decorator;
 
-use FW\Traits\Decorator;
+use FW\DI\Decorator;
 
+/**
+ * Class Builder
+ * This class is used to find the correct arguments for a class constructor
+ * @package FW\Decorator
+ */
 class Builder
 {
     protected $methodParams = [];
@@ -14,6 +19,12 @@ class Builder
 
     }
 
+    /**
+     * Take a set of required parameters [name,class] and a set of object and tries to make them match
+     * If they don't match of if there are some errors, these errors get be retrieved with the getErrors() method.
+     * @param $required
+     * @param $params
+     */
     public function build($required, $params)
     {
         $this->errors       = [];
@@ -46,11 +57,15 @@ class Builder
 
     }
 
+    /**
+     * Check if parameters are usable
+     * @param $params
+     */
     protected function checkParams($params)
     {
         foreach ($params as $type) {
             if (is_a($type, Decorator::class)) {
-                $this->errors[] = "[".(string)$type."]";
+                $this->errors[] = "Parameter is not well instantiated [".(string)$type."]";
             }
         }
     }
@@ -58,17 +73,26 @@ class Builder
     protected function setParams($position, $required, $param)
     {
         if (!is_a($param, $required['class'])) {
-            $this->errors[] = "Wrong type for param $position";
+            $this->errors[] = sprintf("You can't put an instance of %s in the parameter #%s $%s of type %s",
+                get_class($param), $position, $required['name'], $required['class']);
             return false;
         }
         $this->methodParams[$position] = $param;
     }
 
+    /**
+     * Get the sorted contructor params
+     * @return array
+     */
     public function getParams()
     {
         return $this->methodParams;
     }
 
+    /**
+     * Get the list of errors encountered when trying to find parameters
+     * @return array
+     */
     public function getErrors()
     {
         return $this->errors;
