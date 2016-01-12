@@ -19,6 +19,7 @@ class Decorator
     public function __construct($className)
     {
         $this->className = $className;
+        $this->builder   = new Builder($this->requiredParams, $this->params);
         $this->getReflectionInfos();
     }
 
@@ -108,7 +109,7 @@ class Decorator
     protected function canBuild()
     {
         if (!empty($this->requiredParams)) {
-            $this->builder = new Builder($this->requiredParams, $this->params);
+            $this->builder->build($this->requiredParams, $this->params);
 
             if ($this->builder->getErrors()) {
                 return false;
@@ -120,7 +121,12 @@ class Decorator
 
     public function __toString()
     {
-        $this->decoratorError();
+        try {
+            $this->decoratorError();
+        } catch (Exception $e) {
+            return $e->getMessage();
+        }
+        return "";
     }
 
     public function __debugInfo()
@@ -133,13 +139,28 @@ class Decorator
         $this->decoratorError();
     }
 
+    public function __get($a)
+    {
+        $this->decoratorError();
+    }
+
     public function __invoke()
     {
         $this->decoratorError();
     }
 
+    /*public function __isset($param)
+    {
+        $this->decoratorError();
+    }*/
+
     protected function decoratorError()
     {
-        throw new Exception("Decorator " . implode(' - ', $this->builder->getErrors()));
+        $errors = $this->builder->getErrors();
+        if (empty($errors)) {
+            $this->builder->build($this->requiredParams, $this->params);
+        }
+
+        throw new Exception(sprintf("Error when building %s - %s", $this->className, implode(' - ', $this->builder->getErrors())));
     }
 }

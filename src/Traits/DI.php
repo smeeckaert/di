@@ -41,7 +41,7 @@ trait DI
      * @param      $object
      * @param null $name
      *
-     * @return DI
+     * @return $this
      */
     public function with($object, $name = null)
     {
@@ -73,7 +73,7 @@ trait DI
                 }
             }
             if (!$match) {
-                trigger_error("Object of class $objectClass given to " . get_class() . " but it seems unused.", E_USER_WARNING);
+                trigger_error("Object of class $objectClass given to ".get_class()." but it seems unused.", E_USER_WARNING);
             } else {
                 $this->assignProperty($match, $object);
             }
@@ -94,7 +94,7 @@ trait DI
     {
         if (!empty($this->propertyTypes[$name]) && $value !== null) {
             if (!is_a($value, $this->propertyTypes[$name])) {
-                throw new Exception("You can't put an instance of " . get_class($value) . " in the parameter $name of type " . $this->propertyTypes[$name]);
+                throw new Exception("You can't put an instance of ".get_class($value)." in the parameter $name of type ".$this->propertyTypes[$name]);
             }
         }
         $this->$name = $value;

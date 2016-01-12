@@ -6,7 +6,7 @@ require 'vendor/autoload.php';
 
 function d($item)
 {
-    echo "\n" . var_dump($item) . "\n";
+    echo "\n".var_dump($item)."\n";
 }
 
 class Unused
@@ -17,6 +17,13 @@ class Unused
 class B
 {
     use \FW\Traits\DI;
+
+    public $c = C::class;
+
+    public function construct(C $c)
+    {
+
+    }
 }
 
 class C
@@ -55,12 +62,14 @@ class Test
     }
 }
 
-
+$item = B::build();
+//d($item->c);
+//die();
 $testC = C::build();
 
 d($testC);
 
-$test = Test::build()->with(B::build())->with(C::build())->with(new D(), 'a')->with(new Unused());
+$test = Test::build()->with(B::build()->with(C::build()))->with(C::build())->with(new D(), 'a')->with(new Unused());
 
 try {
     $test->meth();
@@ -68,4 +77,4 @@ try {
     d($e->getMessage());
 }
 
-d($test);
+//d($test);
