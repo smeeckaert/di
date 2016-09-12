@@ -62,6 +62,7 @@ If you want to make properties mandatory you have to create a `construct` method
 
 ```php
 <?php
+// Orchard.php
 class Orchard
 {
     use \FW\DI\DI;
@@ -110,9 +111,9 @@ As of now you have to :
 * Add the class of the object as a default value
 * If the object is required, add it as a type hint of the construct method. (note: I need to get rid of that because it causes signature problems when extending, and it duplicates the information anyway)
 
-```
+```php
 <?php
-
+// TypeHint.php
 class DBConnection
 {
     use \FW\DI\DI;
@@ -170,6 +171,8 @@ An immutable object's properties can't be altered by outside calls.
 **TODO**: Monitor any changes in any properties even in methods
 
 ```php
+<?php
+// Car.php
 class Car
 {
     use \FW\DI\DI;
@@ -190,7 +193,7 @@ var_dump($car->window);
 
 try {
     $car->window = Window::build(); // Will throw an error
-}catch(Exception $e) {
+} catch(Exception $e) {
     echo $e->getMessage();
 }
 ```
