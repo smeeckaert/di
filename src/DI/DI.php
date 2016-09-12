@@ -2,7 +2,7 @@
 
 namespace FW\DI;
 
-use FW\DI\Exception;
+use FW\DI\Decorator\Immutable;
 
 trait DI
 {
@@ -18,11 +18,19 @@ trait DI
         return $decorator->make();
     }
 
+    /**
+     * @return static
+     */
+    public static function buildImmutable()
+    {
+        $decorator = new Immutable(get_called_class());
+        return $decorator->make();
+    }
+
     public function __construct()
     {
         // We need to recover the data types since they will get busted by the decorator
-
-        $class      = new \ReflectionClass(get_class());
+        $class = new \ReflectionClass(get_class());
         $properties = $class->getDefaultProperties();
 
         // This prevents any default string value, so it could be enhanced
@@ -45,14 +53,22 @@ trait DI
      */
     public function with($object, $name = null)
     {
+        if (is_array($object)) {
+            $carry = null;
+            foreach ($object as $propertyName => $value) {
+                $carry = $this->setProperty($value, $propertyName);
+            }
+            return $carry;
+        }
         return $this->setProperty($object, $name);
     }
 
     /**
-     * Add the prooperty to the object
+     * Add the property to the object
      *
      * @param $object
      * @param $name
+     * @throws Exception
      *
      * @return $this
      */
@@ -62,7 +78,7 @@ trait DI
             $this->assignProperty($name, $object);
         } else {
             $objectClass = get_class($object);
-            $match       = null;
+            $match = null;
             foreach ($this->propertyTypes as $name => $type) {
                 if (is_a($object, $type)) {
                     if ($match) {
@@ -73,11 +89,11 @@ trait DI
                 }
             }
             if (!$match) {
-                trigger_error("Object of class $objectClass given to ".get_class()." but it seems unused.", E_USER_WARNING);
+                // We gave an unused class in the DI, it doesn't serve any purpose but it won't break the build
+                trigger_error("Object of class $objectClass given to " . get_class() . " but it seems unused.", E_USER_WARNING);
             } else {
                 $this->assignProperty($match, $object);
             }
-            // Find the correct field to put that, otherwise throw a big error
         }
         return $this;
     }

@@ -27,30 +27,40 @@ class Builder
      */
     public function build($required, $params)
     {
-        $this->errors       = [];
+        $this->errors = [];
         $this->methodParams = [];
-        $availableParams    = $params;
+        $availableParams = $params;
         $this->checkParams($params);
         foreach ($required as $position => $infos) {
+            /**
+             * If a parameter is named, we just set it
+             * The setParams method will check if the object is of correct type
+             */
             if (!empty($availableParams[$infos['name']])) {
                 $this->setParams($position, $infos, $availableParams[$infos['name']]);
                 unset($availableParams[$infos['name']]);
             } else {
-                // Searching by class if we found it
-                $searchedClass = $infos['class'];
-                $hasParams     = false;
-                foreach ($availableParams as $key => $type) {
-                    if (is_a($type, $searchedClass)) {
-                        if (is_numeric($key) || $key === $infos['name']) {
-                            $this->setParams($position, $infos, $type);
-                            $hasParams = true;
+                $hasParams = false;
+                /**
+                 * If we have a class, we search a candidate for the injection
+                 * If the parameter is scalar, it __MUST__ be named, otherwise we can't match it
+                 */
+                if (!empty($infos['class'])) {
+                    // Searching by class if we found it
+                    $searchedClass = $infos['class'];
+                    foreach ($availableParams as $key => $type) {
+                        if (is_a($type, $searchedClass)) {
+                            if (is_numeric($key) || $key === $infos['name']) {
+                                $this->setParams($position, $infos, $type);
+                                $hasParams = true;
+                            }
+                            unset($availableParams[$key]);
+                            break;
                         }
-                        unset($availableParams[$key]);
-                        break;
                     }
                 }
                 if (!$hasParams) {
-                    $this->errors[] = sprintf("Can't find matching dependancy for parameter #%s $%s of type %s", $position, $infos['name'], $infos['class']);
+                    $this->errors[] = sprintf("Can't find matching dependancy for parameter #%s $%s of type %s", $position, $infos['name'], !empty($infos['class']) ? $infos['class'] : 'scalar type');
                 }
             }
         }
@@ -59,20 +69,28 @@ class Builder
 
     /**
      * Check if parameters are usable
+     * Mainly if parameters are still decorators it will break the injection
      * @param $params
      */
     protected function checkParams($params)
     {
         foreach ($params as $type) {
             if (is_a($type, Decorator::class)) {
-                $this->errors[] = "Parameter is not well instantiated [".(string)$type."]";
+                $this->errors[] = "Parameter is not well instantiated [" . (string)$type . "]";
             }
         }
     }
 
+    /**
+     * Set into the methodParams array the correct param for the position
+     * @param $position
+     * @param $required
+     * @param $param
+     * @return bool
+     */
     protected function setParams($position, $required, $param)
     {
-        if (!is_a($param, $required['class'])) {
+        if (!empty($required['class']) && !is_a($param, $required['class'])) {
             $this->errors[] = sprintf("You can't put an instance of %s in the parameter #%s $%s of type %s",
                 get_class($param), $position, $required['name'], $required['class']);
             return false;

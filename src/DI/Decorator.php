@@ -3,8 +3,6 @@
 namespace FW\DI;
 
 use FW\Decorator\Builder;
-use FW\Decorator\Exception;
-use FW\DI\DI;
 
 class Decorator
 {
@@ -20,7 +18,7 @@ class Decorator
     public function __construct($className)
     {
         $this->className = $className;
-        $this->builder   = new Builder($this->requiredParams, $this->params);
+        $this->builder = new Builder($this->requiredParams, $this->params);
         $this->getReflectionInfos();
     }
 
@@ -31,10 +29,14 @@ class Decorator
     {
         try {
             $this->constructMethod = new \ReflectionMethod($this->className, "construct");
-            $params                = $this->constructMethod->getParameters();
-            $i                     = 0;
+            $params = $this->constructMethod->getParameters();
+            $i = 0;
             foreach ($params as $param) {
-                $this->requiredParams[$i++] = ['name' => $param->getName(), 'class' => $param->getClass()->getName()];
+                $paramsInfos = ['name' => $param->getName()];
+                if (!empty($param->getClass())) {
+                    $paramsInfos['class'] = $param->getClass()->getName();
+                }
+                $this->requiredParams[$i++] = $paramsInfos;
             }
         } catch (\ReflectionException $e) {
             // There is no construct method but we don't really care
@@ -90,7 +92,7 @@ class Decorator
      */
     protected function resetObject(&$object)
     {
-        $class      = new \ReflectionClass($this->className);
+        $class = new \ReflectionClass($this->className);
         $properties = $class->getDefaultProperties();
 
         foreach ($properties as $propName => $property) {
@@ -120,6 +122,10 @@ class Decorator
         return true;
     }
 
+    /**
+     * There is a bunch of error generating snippet if someone tries to access the not yet built object
+     */
+
     public function __toString()
     {
         try {
@@ -130,9 +136,11 @@ class Decorator
         return "";
     }
 
+    // This will cause a fatal error
     public function __debugInfo()
     {
         $this->decoratorError();
+        return [];
     }
 
     public function __call($a, $b)
@@ -160,16 +168,15 @@ class Decorator
         $this->decoratorError();
     }
 
-    public function __invoke()
+    public function __invoke($a)
     {
         $this->decoratorError();
     }
 
-    /*public function __isset($param)
-    {
-        $this->decoratorError();
-    }*/
-
+    /**
+     * Throw a build exception for every error found in the building process
+     * @throws Exception
+     */
     protected function decoratorError()
     {
         $errors = $this->builder->getErrors();
