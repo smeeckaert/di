@@ -7,7 +7,7 @@ as well as working with legacy classes.
 
 There are no God Container and it is based on convention.
 
-It works in PHP 7.0 and hopefully in PHP 5.6.
+It works in PHP 7.0 and hopefully in PHP 5.6. It will work well with any IDE understanding PHPDoc.
 
 All codes examples in this doc can be found in the demo folder.
 
@@ -497,3 +497,21 @@ There is a bug when trying to debug a non built object that will cause a fatal e
 
 As of now, because of the lack of type hinting on class properties, you can't set a default value for a property to the name of an actual class.
 
+
+## How it works
+
+The DI::build method will return a Decorator instance, which inherits the DI trait.
+
+The Decorator act like the object but prevent accessing methods or property.
+
+Every time a property is changed in the Decorator by the `with` call, it will call the Decorator\Builder
+ to see if all the object mandatory parameters are found.
+
+If every mandatory parameter is found, it will instanciate the new object, clean the default values used by DI and return it.
+
+When using `buildImmutable` or `buildSoftImmutable`, the Decorator will never return the new object, 
+instead it will keep the object instance protected and forward appropriate calls to the object.
+
+## License
+
+This project is released under the MIT license.
