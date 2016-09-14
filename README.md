@@ -9,6 +9,8 @@ There are no God Container and it is based on convention.
 
 It works in PHP 7.0 and hopefully in PHP 5.6.
 
+All codes examples in this doc can be found in the demo folder.
+
 ## Overview
 
 The trait `\FW\DI\DI` is all you need to declare in a class to benefit from the DI.
@@ -182,6 +184,7 @@ try {
 To make a property mandatory you can either type-hint it or name it exactly as the object property
 
 ```
+<?php
 class Model
 {
     use \FW\DI\DI;
@@ -284,6 +287,7 @@ Alternatively you can use the `buildSoftImmutable` method. It works the same way
 
 ```php
 <?php
+// SoftImmutable.php
 class Car
 {
     use \FW\DI\DI;
