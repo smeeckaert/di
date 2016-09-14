@@ -95,7 +95,7 @@ try {
 
 ## __construct and required properties
 
-If you want to make properties mandatory you have to create a `__construct` method taking parameters which names must match those of the mandatory properties.
+If you want to make properties mandatory you have to create a `__construct` method taking parameters which names __must__ match those of the mandatory properties.
 
 ```php
 <?php
@@ -179,37 +179,6 @@ try {
     echo $model->hello() . "\n";
 } catch (Exception $e) {
     var_dump($e->getMessage());
-}
-```
-
-To make a property mandatory you can either type-hint it or name it exactly as the object property
-
-```
-<?php
-class Model
-{
-    use \FW\DI\DI;
-
-    protected $connection = DBExtend::class;
-    protected $table;
-
-    // Either
-
-    public function __construct($connection)
-    {
-    }
-    
-    // OR
-    
-    public function __construct(DBExtend $myRenamedArgument)
-    {
-    }
-
-    // But NOT
-    
-    public function __construct($myRenamedArgument)
-    {
-    }
 }
 ```
 
