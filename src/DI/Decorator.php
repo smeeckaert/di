@@ -34,9 +34,11 @@ class Decorator
         if (($params = $this->canBuild())) {
             $reflectionClass = new \ReflectionClass($this->className);
             $object = $reflectionClass->newInstanceArgs(is_array($params) ? $params : []);
-
+            /**
+             * Reset the object by removing default values used for typehinting
+             * Then add our dependancies
+             */
             $this->resetObject($object);
-
             foreach ($this->params as $key => $value) {
                 $object->with($value, (is_numeric($key) ? null : $key));
             }
@@ -190,7 +192,8 @@ class Decorator
         if (empty($errors)) {
             $this->builder->build($this->requiredParams, $this->params);
         }
-
+        var_dump($this->requiredParams);
+        var_dump($this->params);
         throw new Exception(sprintf("Error when building %s - %s", $this->className, implode(' - ', $this->builder->getErrors())));
     }
 }

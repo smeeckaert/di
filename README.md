@@ -212,9 +212,161 @@ class Model
 }
 ```
 
-## Autobuild
+## AutoBuild
 
-Todo
+It can be tedious to repeat the same default arguments over and over.
+
+To change that, there is an AutoBuild tool.
+
+It works in two steps :
+* First, you register you class and arguments with the `\FW\DI\AutoBuild::register` method.
+* Then you call the `auto` method of a building object.
+
+```php
+<?php
+// We register the DBConnection class in the AutoBuild
+\FW\DI\AutoBuild::register(DBConnection::class, ['host' => 'localhost']);
+// The Model_Post uses the AutoBuild to inject the dependancy
+$post = Model_Post::build()->auto();
+```
+
+
+The AutoBuilding is cascading, meaning if one of your class dependancy is already registered,
+you don't have to add it in the class parameters. 
+
+```php
+<?php
+
+// You can do that way
+\FW\DI\AutoBuild::register(DBConnection::class, ['host' => 'localhost', 'dependancy' => Dependancy::build()]);
+
+// Or you can register the dependancy first
+
+\FW\DI\AutoBuild::register(Dependancy::class, []);
+// And omit it in subsequent registrations
+\FW\DI\AutoBuild::register(DBConnection::class, ['host' => 'localhost']);
+```
+
+Here is an example of usage of the AutoBuild
+
+```php
+<?php
+// AutoBuild.php
+class Dependancy
+{
+    use \FW\DI\DI;
+}
+
+class DBConnection
+{
+    use \FW\DI\DI;
+
+    protected $host;
+    protected $user;
+    protected $password;
+    protected $dependancy = Dependancy::class;
+
+    public function __construct($host, $dependancy)
+    {
+    }
+
+    public function getHost()
+    {
+        return $this->host;
+    }
+}
+
+class Model
+{
+    use \FW\DI\DI;
+
+    protected $connection = DBConnection::class;
+    protected $table;
+
+    public function __construct($connection)
+    {
+    }
+
+    public function getHost()
+    {
+        return $this->connection->getHost();
+    }
+
+}
+
+class Model_Post extends Model
+{
+    protected $table = 'table';
+}
+
+\FW\DI\AutoBuild::register(Dependancy::class, []);
+\FW\DI\AutoBuild::register(DBConnection::class, ['host' => 'localhost']); // $dependancy will be autoloaded since it's registered already
+
+try {
+    $post = Model_Post::build()->auto();
+    var_dump($post->getHost());
+} catch (Exception $e) {
+    var_dump($e->getMessage());
+}
+```
+
+You can only register **ONE** set of default parameters for a class in the AutoBuild.
+
+You can override AutoBuild default parameters by using `with` before the `auto` method;
+
+```php
+<?php
+// AutoBuildOverride.php
+class Dependancy
+{
+    use \FW\DI\DI;
+
+    public $name;
+
+    public function __construct($name)
+    {
+    }
+}
+
+class DBConnection
+{
+    use \FW\DI\DI;
+
+    public $host;
+
+    public function __construct($host)
+    {
+    }
+
+}
+
+class Model
+{
+    use \FW\DI\DI;
+
+    public $connection = DBConnection::class;
+    public $dependancy = Dependancy::class;
+
+    public function __construct($connection, $dependancy)
+    {
+    }
+
+}
+
+
+\FW\DI\AutoBuild::register(Dependancy::class, ['name' => 'AutoName']);
+\FW\DI\AutoBuild::register(DBConnection::class, ['host' => 'localhost']); // $dependancy will be autoloaded since it's registered already
+
+try {
+    $post = Model::build()->auto();
+    var_dump($post->connection->host);
+    // We override the connection's parameter while still automatically building the Dependancy
+    $overridenPost = Model::build()->with(DBConnection::build()->with('127.0.0.1', 'host'), 'connection')->auto();
+    var_dump($overridenPost->connection->host);
+} catch (Exception $e) {
+    var_dump($e->getMessage());
+}
+```
 
 ## Immutability
 

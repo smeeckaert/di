@@ -38,6 +38,29 @@ trait DI
         return $decorator->make();
     }
 
+    /**
+     * Will try to build any property automatically with the autobuilder
+     * It will depend on the property class registered
+     * @return $this
+     */
+    public function auto()
+    {
+        $return = $this;
+        $this->loadPropertyTypes();
+        if (!empty($this->propertyTypes)) {
+            foreach ($this->propertyTypes as $name => $class) {
+                if (!empty($this->params[$name])) {
+                    continue;
+                }
+                $object = AutoBuild::getInstance($class);
+                if (!empty($object)) {
+                    $return = $this->with($object, $name);
+                }
+            }
+        }
+        return $return;
+    }
+
 
     /**
      * Add automatically a dependancy to the class.
@@ -68,6 +91,14 @@ trait DI
         $this->frozen = true;
     }
 
+    protected function loadPropertyTypes()
+    {
+        if (empty($this->propertyTypes)) {
+            // We need to recover the data types since they will get busted by the decorator
+            $this->propertyTypes = $this->getPropertyTypes(get_class());
+        }
+    }
+
     /**
      * Add the property to the object
      *
@@ -79,9 +110,8 @@ trait DI
      */
     protected function setProperty($object, $name)
     {
-        if (empty($this->propertyTypes)) {
-            // We need to recover the data types since they will get busted by the decorator
-            $this->propertyTypes = $this->getPropertyTypes(get_class());
+        $this->loadPropertyTypes();
+        if (empty($this->restrictedProperties) && $this->frozen) {
             $this->restrictedProperties = $this->getRestrictedProperties(get_class());
         }
         if ($name) {
