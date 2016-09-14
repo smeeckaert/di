@@ -237,7 +237,7 @@ you don't have to add it in the class parameters.
 ```php
 <?php
 
-// You can do that way
+// You can do that way, but we are adding an instanciated object into the AutoBuild mechanism
 \FW\DI\AutoBuild::register(DBConnection::class, ['host' => 'localhost', 'dependancy' => Dependancy::build()]);
 
 // Or you can register the dependancy first
@@ -367,6 +367,9 @@ try {
     var_dump($e->getMessage());
 }
 ```
+
+Note: Every arguments given to the AutoBuilder is static, thus it will never be clean by the GC.
+It's good to some things (like string, int, filenames and such) but avoid puting instanciated objects in it.
 
 ## Immutability
 

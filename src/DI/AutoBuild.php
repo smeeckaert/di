@@ -4,6 +4,12 @@ namespace FW\DI;
 
 use FW\DI\AutoBuild\Exception;
 
+/**
+ * Class AutoBuild
+ * Register default class parameters to be easily builded
+ *
+ * @package FW\DI
+ */
 class AutoBuild
 {
     protected static $registeredClasses = [];
