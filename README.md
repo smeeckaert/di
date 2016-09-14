@@ -93,7 +93,7 @@ try {
 
 ```
 
-## __constructor and required properties
+## __construct and required properties
 
 If you want to make properties mandatory you have to create a `__construct` method taking parameters which names must match those of the mandatory properties.
 
@@ -127,9 +127,10 @@ var_dump(Orchard::build()->with(1, 'orange')->with(1, 'apple'));
 
 You can add some type hint in your parameters to prevent wrong objects to be injected.
 
-As of now you have to :
-* Add the class of the object as a default value of the object property. (it's the only way to do it due to the lack of property type-hinting in PHP as of 7.0)
-* If the object is required, add it in the __construct method.
+All you have to do is to add the class of the object as a default value of the object property.
+
+_(it's the only way to do it due to the lack of property type-hinting in PHP as of 7.0)_
+
 
 ```php
 <?php
@@ -211,6 +212,9 @@ class Model
     }
 }
 ```
+
+The `with` keyword will detect automatically the type of instanciated object given to him and will try to place them in the correct properties.
+However if two or more properties share 
 
 ## AutoBuild
 
