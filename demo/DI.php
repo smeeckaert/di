@@ -15,7 +15,7 @@ class DBConnection
     protected $user;
     protected $password;
 
-    public function construct($host, $user, $password)
+    public function __construct($host, $user, $password)
     {
     }
 
@@ -32,7 +32,7 @@ class Model
     protected $connection = DBConnection::class;
     protected $table;
 
-    public function construct(DBConnection $connection)
+    public function __construct($connection)
     {
     }
 }
@@ -80,7 +80,7 @@ var_dump(isset($modelImmut->id)); // false
 try {
     $modelImmut->id = 25;
 } catch (Exception $e) {
-    d($e->getMessage()); // Exception thrown
+    var_dump($e->getMessage()); // Exception thrown
 }
 var_dump(isset($modelImmut->id)); // false
 $modelImmut->setId(22);

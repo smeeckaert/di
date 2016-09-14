@@ -8,6 +8,8 @@ trait DI
 {
 
     protected $propertyTypes = [];
+    protected $restrictedProperties = [];
+    protected $frozen = false;
 
     /**
      * @return static
@@ -27,18 +29,13 @@ trait DI
         return $decorator->make();
     }
 
-    public function __construct()
+    /**
+     * @return static
+     */
+    public static function buildSoftImmutable()
     {
-        // We need to recover the data types since they will get busted by the decorator
-        $class = new \ReflectionClass(get_class());
-        $properties = $class->getDefaultProperties();
-
-        // This prevents any default string value, so it could be enhanced
-        foreach ($properties as $propName => $property) {
-            if (is_string($property) && class_exists($property)) {
-                $this->propertyTypes[$propName] = $property;
-            }
-        }
+        $decorator = new Immutable\Soft(get_called_class());
+        return $decorator->make();
     }
 
 
@@ -64,6 +61,14 @@ trait DI
     }
 
     /**
+     * Freeze the object against further modification of protected and private methods
+     */
+    public function freeze()
+    {
+        $this->frozen = true;
+    }
+
+    /**
      * Add the property to the object
      *
      * @param $object
@@ -74,6 +79,11 @@ trait DI
      */
     protected function setProperty($object, $name)
     {
+        if (empty($this->propertyTypes)) {
+            // We need to recover the data types since they will get busted by the decorator
+            $this->propertyTypes = $this->getPropertyTypes(get_class());
+            $this->restrictedProperties = $this->getRestrictedProperties(get_class());
+        }
         if ($name) {
             $this->assignProperty($name, $object);
         } else {
@@ -99,6 +109,42 @@ trait DI
     }
 
     /**
+     * Return an array of hinted type for class properties
+     * If they don't have a type, we ignore it
+     *
+     * @param $class
+     * @return array
+     */
+    protected function getPropertyTypes($class)
+    {
+        $class = new \ReflectionClass($class);
+        $properties = $class->getDefaultProperties();
+        $propertyTypes = [];
+
+        // This prevents any default string value, so it could be enhanced
+        foreach ($properties as $propName => $property) {
+            if (is_string($property) && class_exists($property)) {
+                $propertyTypes[$propName] = $property;
+            }
+        }
+        return $propertyTypes;
+    }
+
+    protected function getRestrictedProperties($class)
+    {
+        $class = new \ReflectionClass($class);
+        $properties = $class->getProperties();
+        $restrictedProperties = [];
+
+        foreach ($properties as $propName => $property) {
+            if ($property->isPrivate() || $property->isProtected()) {
+                $restrictedProperties[] = $property->getName();
+            }
+        }
+        return $restrictedProperties;
+    }
+
+    /**
      * Assing the property while checking if the type matches
      *
      * @param $name
@@ -116,6 +162,13 @@ trait DI
                     )
                 );
             }
+        }
+        if ($this->frozen && in_array($name, $this->restrictedProperties)) {
+            throw new Exception(
+                sprintf("You can't change the protected or private parameter $%s of type %s",
+                    $name, !empty($this->propertyTypes[$name]) ? $this->propertyTypes[$name] : "scalar"
+                )
+            );
         }
         $this->$name = $value;
     }

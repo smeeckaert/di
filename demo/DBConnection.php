@@ -11,7 +11,7 @@ class DBConnection
     protected $user;
     protected $password;
 
-    public function construct($host, $user, $password)
+    public function __construct($host, $user, $password)
     {
     }
 

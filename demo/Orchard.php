@@ -17,7 +17,7 @@ class Orchard
     /**
      * DI contructor (see below)
      **/
-    public function construct($apple)
+    public function __construct($apple)
     {
     }
 }

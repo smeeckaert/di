@@ -30,7 +30,7 @@ class DBConnection
     /**
     * DI contructor (see below)
     **/
-    public function construct($host, $user, $password)
+    public function __construct($host, $user, $password)
     {
     }
 
@@ -56,9 +56,44 @@ $dbCon = DBConnection::build()->with('localhost', 'host')->with('root', 'user')-
 var_dump($dbCon);
 ```
 
-## Constructor and required properties
+Once the object is built, you can't change any protected or private property via the `with` method.
 
-If you want to make properties mandatory you have to create a `construct` method taking parameters which names must match those of the mandatory properties.
+```php
+<?php
+// WithLock.php
+
+class DBConnection
+{
+    use \FW\DI\DI;
+
+    protected $host;
+
+    public function __construct($host)
+    {
+    }
+
+    public function hello()
+    {
+        return 'hello';
+    }
+}
+
+
+$model = DBConnection::build()->with('localhost', 'host');
+echo $model->hello() . "\n";
+
+try {
+    $model->with('test', 'host'); // This will fail
+    echo $model->hello() . "\n";
+} catch (Exception $e) {
+    var_dump($e->getMessage());
+}
+
+```
+
+## __constructor and required properties
+
+If you want to make properties mandatory you have to create a `__construct` method taking parameters which names must match those of the mandatory properties.
 
 ```php
 <?php
@@ -71,7 +106,7 @@ class Orchard
     protected $pear;
     protected $orange;
 
-    public function construct($apple)
+    public function __construct($apple)
     {
     }
 }
@@ -85,31 +120,14 @@ var_dump(Orchard::build()->with(1, 'orange')->with(1, 'apple'));
 
 ```
 
-You should **not** override the __construct() of the trait, if you want to do so you can do something like :
-
-```php
-<?php
-class MySuperClass {
-
-    use \FW\DI\DI {
-        \FW\DI\DI::__construct as private __diConstruct;
-    }
-
-    public function __construct($a, $b, $c = 0)
-    {
-        $this->__diConstruct();
-    }
-}
-
-```
 
 ## Parameter type hint
 
 You can add some type hint in your parameters to prevent wrong objects to be injected.
 
 As of now you have to :
-* Add the class of the object as a default value
-* If the object is required, add it as a type hint of the construct method. (note: I need to get rid of that because it causes signature problems when extending, and it duplicates the information anyway)
+* Add the class of the object as a default value of the object property. (it's the only way to do it due to the lack of property type-hinting in PHP as of 7.0)
+* If the object is required, add it in the __construct method.
 
 ```php
 <?php
@@ -122,7 +140,7 @@ class DBConnection
     protected $user;
     protected $password;
 
-    public function construct($host)
+    public function __construct($host)
     {
     }
 }
@@ -139,7 +157,7 @@ class Model
     protected $connection = DBExtend::class;
     protected $table;
 
-    public function construct(DBExtend $connection)
+    public function __construct($connection)
     {
     }
 
@@ -161,14 +179,45 @@ try {
 }
 ```
 
+To make a property mandatory you can either type-hint it or name it exactly as the object property
+
+```
+class Model
+{
+    use \FW\DI\DI;
+
+    protected $connection = DBExtend::class;
+    protected $table;
+
+    // Either
+
+    public function __construct($connection)
+    {
+    }
+    
+    // OR
+    
+    public function __construct(DBExtend $myRenamedArgument)
+    {
+    }
+
+    // But NOT
+    
+    public function __construct($myRenamedArgument)
+    {
+    }
+}
+```
+
+## Autobuild
+
+Todo
 
 ## Immutability
 
 You can build an immutable object by calling `buildImmutable` instead of `build`.
 
-An immutable object's properties can't be altered by outside calls.
-
-**TODO**: Monitor any changes in any properties even in methods
+An immutable object's properties can't be altered by outside calls or inside calls.
 
 ```php
 <?php
@@ -179,27 +228,113 @@ class Car
 
     public $window = Window::class;
 
-    public function construct(Window $window)
+    public function __construct($window)
     {
+    }
+
+    public function setWindow($window)
+    {
+        $this->window = $window;
     }
 }
 
-class Window {
+class Window
+{
+    use \FW\DI\DI;
+
+    public $name;
+
+    public function __construct($name)
+    {
+
+    }
 }
 
-$car = Car::buildImmutable()->with(Window::build());
+$car = Car::buildImmutable()->with(Window::build()->with('win1', 'name'));
+var_dump($car->window->name);
+$carMutable = Car::build()->with(Window::build()->with('win2', 'name'));
+var_dump($carMutable->window->name);
 
-var_dump($car->window);
+
+$carMutable->window = Window::build()->with('win3', 'name'); // Will work
+var_dump($carMutable->window->name);
+$newWindow = Window::build()->with('win4', 'name');
+$carMutable->setWindow($newWindow);
+var_dump($carMutable->window->name);
 
 try {
+    echo "Changing public property\n";
     $car->window = Window::build(); // Will throw an error
-} catch(Exception $e) {
-    echo $e->getMessage();
+} catch (Exception $e) {
+    var_dump($e->getMessage());
 }
+
+
+try {
+    echo "Using method\n";
+    $car->setWindow($newWindow); // Will throw an error
+} catch (Exception $e) {
+    var_dump($e->getMessage());
+}
+
+var_dump($car->window->name); // Will still be win1
 ```
 
-## Using with existing classes
+Alternatively you can use the `buildSoftImmutable` method. It works the same way but only prevent outside change of the object.
+
+```php
+<?php
+class Car
+{
+    use \FW\DI\DI;
+
+    public $window = Window::class;
+
+    public function __construct($window)
+    {
+    }
+
+    public function setWindow($window)
+    {
+        $this->window = $window;
+    }
+}
+
+class Window
+{
+    use \FW\DI\DI;
+
+    public $name;
+
+    public function __construct($name)
+    {
+
+    }
+}
+
+$car = Car::buildSoftImmutable()->with(Window::build()->with('win1', 'name'));
+$newWindow = Window::build()->with('win4', 'name');
+var_dump($car->window->name);
+
+try {
+    $car->window = Window::build()->with('win2', 'name'); // Will throw an error
+} catch (Exception $e) {
+    var_dump($e->getMessage());
+}
+
+
+try {
+    $car->setWindow($newWindow); // Will work in soft mode
+} catch (Exception $e) {
+    var_dump($e->getMessage());
+}
+
+var_dump($car->window->name); // Will be win 4
+```
 
 ## Known issues
 
-There is a bug when trying to debug a non built object that will cause a fatal error, at least in PHP 7.0. (check demo/BugDebugInfo.php).
+There is a bug when trying to debug a non built object that will cause a fatal error, at least in PHP 7.0. (check demo/BugDebugInfo.php).It was fixed by http://git.php.net/?p=php-src.git;a=commit;h=2d8ab51576695630a7471ff829cc5ea10becdc0f
+
+As of now, because of the lack of type hinting on class properties, you can't set a default value for a property to the name of an actual class.
+

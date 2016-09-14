@@ -7,6 +7,7 @@ use FW\DI\Decorator;
 class Immutable extends Decorator
 {
     protected $instance;
+    protected $soft = false;
 
     /**
      * Try to build the object, if we can't return this class
@@ -38,7 +39,15 @@ class Immutable extends Decorator
     protected function forward($callback, $method, $params = [])
     {
         if ($this->isLoaded()) {
-            return $callback();
+            if (!$this->soft) {
+                $oldInstance = clone $this->instance;
+            }
+            $return = $callback();
+            if (!$this->soft && $oldInstance != $this->instance) {
+                $this->instance = $oldInstance;
+                $this->throwImmutableException();
+            }
+            return $return;
         } else {
             return parent::$method($params);
         }
@@ -74,7 +83,7 @@ class Immutable extends Decorator
 
     public function __set($a, $b)
     {
-        throw new Decorator\Immutable\Exception("The object is immutable");
+        $this->throwImmutableException();
     }
 
     public function __isset($a)
@@ -96,5 +105,10 @@ class Immutable extends Decorator
         return $this->forward(function () use ($a) {
             return $this->instance($a);
         }, '__invoke', [$a]);
+    }
+
+    protected function throwImmutableException()
+    {
+        throw new Decorator\Immutable\Exception("Trying to change a property of an immutable object");
     }
 }

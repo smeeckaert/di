@@ -11,7 +11,7 @@ class DBConnection
     protected $user;
     protected $password;
 
-    public function construct($host)
+    public function __construct($host)
     {
     }
 }
@@ -28,7 +28,7 @@ class Model
     protected $connection = DBExtend::class;
     protected $table;
 
-    public function construct(DBExtend $connection)
+    public function __construct($connection)
     {
     }
 
