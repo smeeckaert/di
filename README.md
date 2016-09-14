@@ -182,8 +182,9 @@ try {
 }
 ```
 
-The `with` keyword will detect automatically the type of instanciated object given to him and will try to place them in the correct properties.
-However if two or more properties share 
+The `with` method will detect automatically the type of instanciated object given to him and will try to place them in the correct properties.
+
+However if two or more properties share the same type, or are scalar, you will have to specify the name of the property as a second argument.
 
 ## AutoBuild
 
