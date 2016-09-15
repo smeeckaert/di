@@ -206,7 +206,8 @@ $post = Model_Post::build()->auto();
 
 
 The AutoBuilding is cascading, meaning if one of your class dependancy is already registered,
-you don't have to add it in the class parameters. 
+you don't have to add it in the class parameters.
+ 
 
 ```php
 <?php
@@ -342,8 +343,17 @@ try {
 }
 ```
 
-Note: Every arguments given to the AutoBuilder is static, thus it will never be clean by the GC.
+Note: Every arguments given to the AutoBuilder _as an array_ is static, thus it will never be clean by the GC.
 It's good to some things (like string, int, filenames and such) but avoid puting instanciated objects in it.
+
+If you want to instanciate objects, you can use a callback instead of an array. This callback must return the same array as before.
+
+```php
+<?php
+\FW\DI\AutoBuild::register(DBConnection::class, function () {
+    return ['host' => 'localhost'];
+});
+```
 
 ## Immutability
 

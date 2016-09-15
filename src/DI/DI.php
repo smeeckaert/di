@@ -45,20 +45,7 @@ trait DI
      */
     public function auto()
     {
-        $return = $this;
-        $this->loadPropertyTypes();
-        if (!empty($this->propertyTypes)) {
-            foreach ($this->propertyTypes as $name => $class) {
-                if (!empty($this->params[$name])) {
-                    continue;
-                }
-                $object = AutoBuild::getInstance($class);
-                if (!empty($object)) {
-                    $return = $this->with($object, $name);
-                }
-            }
-        }
-        return $return;
+        return $this;
     }
 
 
@@ -120,7 +107,7 @@ trait DI
             $objectClass = get_class($object);
             $match = null;
             foreach ($this->propertyTypes as $name => $type) {
-                if (is_a($object, $type)) {
+                if ($object instanceof $type) {
                     if ($match) {
                         throw new \FW\DI\Exception("You must specify a name for the property of type $objectClass,
                         since at least two parameters ($match and $name) share the same class");
@@ -153,7 +140,7 @@ trait DI
 
         // This prevents any default string value, so it could be enhanced
         foreach ($properties as $propName => $property) {
-            if (is_string($property) && class_exists($property)) {
+            if (is_string($property) && (class_exists($property) || interface_exists($property))) {
                 $propertyTypes[$propName] = $property;
             }
         }
@@ -185,7 +172,7 @@ trait DI
     protected function assignProperty($name, $value)
     {
         if (!empty($this->propertyTypes[$name]) && $value !== null) {
-            if (!is_a($value, $this->propertyTypes[$name])) {
+            if (!($value instanceof $this->propertyTypes[$name])) {
                 throw new Exception(
                     sprintf("You can't put an instance of %s in the parameter $%s of type %s",
                         get_class($value), $name, $this->propertyTypes[$name]

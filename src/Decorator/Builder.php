@@ -49,7 +49,7 @@ class Builder
                     // Searching by class if we found it
                     $searchedClass = $infos['class'];
                     foreach ($availableParams as $key => $type) {
-                        if (is_a($type, $searchedClass)) {
+                        if ($type instanceof $searchedClass) {
                             if (is_numeric($key) || $key === $infos['name']) {
                                 $this->setParams($position, $infos, $type);
                                 $hasParams = true;
@@ -75,7 +75,7 @@ class Builder
     protected function checkParams($params)
     {
         foreach ($params as $type) {
-            if (is_a($type, Decorator::class)) {
+            if ($type instanceof Decorator) {
                 $this->errors[] = "Parameter is not well instantiated [" . (string)$type . "]";
             }
         }

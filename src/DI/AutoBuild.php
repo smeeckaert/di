@@ -16,6 +16,7 @@ class AutoBuild
 
     /**
      * Register a new class with its default parameter
+     * The parameters can either be an array of [name => value] properties or a callback returning this array
      *
      * @param $className
      * @param $parameters
@@ -34,6 +35,23 @@ class AutoBuild
     }
 
     /**
+     * Get the registered parameters for a given class
+     * @param $className
+     * @return mixed|null
+     */
+    public static function getDefaultParameters($className)
+    {
+        if (!isset(static::$registeredClasses[$className])) {
+            return null;
+        }
+        $params = static::$registeredClasses[$className];
+        if (is_callable($params)) {
+            $params = $params();
+        }
+        return $params;
+    }
+
+    /**
      * Get a new instance of a registered class, returns null if the class is not registered
      *
      * @param $className
@@ -46,9 +64,6 @@ class AutoBuild
         }
         /** @var DI $object */
         $object = $className::build()->auto();
-        foreach (static::$registeredClasses[$className] as $name => $value) {
-            $object = $object->with($value, is_numeric($name) ? null : $name);
-        }
         return $object;
     }
 }

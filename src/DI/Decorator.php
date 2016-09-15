@@ -23,6 +23,31 @@ class Decorator
         $this->getReflectionInfos();
     }
 
+    public function auto()
+    {
+        $return = $this;
+        $this->loadPropertyTypes();
+        $properties = AutoBuild::getDefaultParameters($this->className);
+        // Set the default values
+        if (!empty($properties)) {
+            foreach ($properties as $propName => $value) {
+                $return = $this->with($value, is_numeric($propName) ? null : $propName);
+            }
+        }
+        // Build consequent dependancies that are already registered
+        if (!empty($this->propertyTypes)) {
+            foreach ($this->propertyTypes as $name => $class) {
+                if (!empty($this->params[$name])) {
+                    continue;
+                }
+                $object = AutoBuild::getInstance($class);
+                if (!empty($object)) {
+                    $return = $this->with($object, $name);
+                }
+            }
+        }
+        return $return;
+    }
 
     /**
      * Try to build the object, if we can't return this class
@@ -192,8 +217,6 @@ class Decorator
         if (empty($errors)) {
             $this->builder->build($this->requiredParams, $this->params);
         }
-        var_dump($this->requiredParams);
-        var_dump($this->params);
         throw new Exception(sprintf("Error when building %s - %s", $this->className, implode(' - ', $this->builder->getErrors())));
     }
 }
